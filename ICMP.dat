@@ -1,0 +1,37 @@
+unsigned int pkt_len = sizeof(sr_ip_hdr_t) + sizeof(sr_icmp_t3_hdr_t);
+uint8_t *pkt = (uint8_t *)malloc(pkt_len);
+
+if (NULL == pkt)
+{
+   fprintf(stderr,"Failed to allocate space for ICMP reply");
+   return;
+}
+
+sr_ip_hdr_t *ipv4hdr = (sr_ip_hdr_t *)pkt;
+sr_icmp_t3_hdr_t *icmphdr =
+         (sr_icmp_t3_hdr_t *)(pkt + sizeof(sr_ip_hdr_t));
+
+/* Populate IPv4 header */
+ipv4hdr->ip_tos = 4; /* header length */
+ipv4hdr->ip_len = 4; /* version */
+ipv4hdr->ip_id = 0; /* not fragmented */
+ipv4hdr->ip_off = 0; /* no fragmentation so no offset */
+ipv4hdr->ip_ttl = 20; /* arbitrary time to live */
+ipv4hdr->ip_p = htons(ip_protocol_icmp); /* protocol is icmp */
+ipv4hdr->ip_sum = pkt_len;
+ipv4hdr->ip_src = out_iface->ip;
+ipv4hdr->ip_dst = req->ip;
+
+/* Populate ICMP header */
+icmphdr->icmp_type = 3;
+icmphdr->icmp_code = 1;
+icmphdr->next_mtu = 0;
+icmphdr->unused = 0;
+icmphdr->data = icmphdr->buff;
+icmphdr->icmp_sum = cksum(req->packets, sizeof(req->packets));
+
+/* Send ICMP response */
+printf("Send ARP request\n");
+print_hdrs(pkt, pkt_len);
+sr_send_packet(sr, pkt, pkt_len, out_iface->name);
+free(pkt);
