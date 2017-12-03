@@ -344,7 +344,7 @@ void sr_handlepacket_arp(struct sr_instance *sr, uint8_t *pkt,
         struct sr_packet *current_packet = req->packets;
         while (current_packet)
         {
-            sr_send_arpreply(sr, (uint8_t)current_packet, (unsigned int)current_packet->len, current_packet->iface);
+            sr_send_arpreply(sr, (uint8_t *)current_packet, (unsigned int)current_packet->len, src_iface);
             current_packet = current_packet->next;
         }
       /*********************************************************************/
@@ -437,7 +437,7 @@ int sr_handle_ip(struct sr_instance* sr, uint8_t * packet, unsigned int len, cha
         }
         else
                 {
-          sr_handle_arpreq(sr, (sr_arpreq *)sr_arpcache_queuereq(&(sr->cache), rt_node->gw.s_addr, packet, len, interface), (sr_if *)interface);
+          sr_handle_arpreq(sr, sr_arpcache_queuereq(&(sr->cache), rt_node->gw.s_addr, packet, len, interface), out_if);
           return 0;
 
         }
@@ -497,10 +497,12 @@ void sr_handlepacket(struct sr_instance* sr,
     return;
   }
 
+  struct sr_if * sending_if = sr_get_interface(sr, interface);
+
   switch(ethernet_type)
   {
       case ethertype_arp:
-       sr_handle_arp(sr, packet , len, interface);
+       sr_handlepacket_arp(sr, packet , len, sending_if);
        break;
       case ethertype_ip:
         sr_handle_ip(sr, packet, len, interface);
