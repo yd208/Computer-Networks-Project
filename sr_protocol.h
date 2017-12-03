@@ -44,7 +44,8 @@
 #ifndef IP_MAXPACKET
 #define IP_MAXPACKET 65535
 #endif
-
+#define ICMP_DATA_SIZE 28
+#define ICMP_ZERO_HEADER_SIZE 10 /* except the data */
 
 
 /* FIXME
@@ -83,10 +84,20 @@ struct sr_icmp_hdr {
   uint8_t icmp_type;
   uint8_t icmp_code;
   uint16_t icmp_sum;
-  
+
 } __attribute__ ((packed)) ;
 typedef struct sr_icmp_hdr sr_icmp_hdr_t;
 
+struct sr_icmp_t0_hdr {
+  uint8_t icmp_type;
+  uint8_t icmp_code;
+  uint16_t icmp_sum;
+  uint16_t identifier;
+  uint16_t sequence_number;
+  uint16_t timestamp;
+  uint16_t data[ICMP_DATA_SIZE/2];
+} __attribute__ ((packed)) ;
+typedef struct sr_icmp_t0_hdr sr_icmp_t0_hdr_t;
 
 /* Structure of a type3 ICMP header
  */
@@ -96,12 +107,20 @@ struct sr_icmp_t3_hdr {
   uint16_t icmp_sum;
   uint16_t unused;
   uint16_t next_mtu;
-  uint8_t data[ICMP_DATA_SIZE];
-
+  uint32_t data[ICMP_DATA_SIZE/4];
 } __attribute__ ((packed)) ;
 typedef struct sr_icmp_t3_hdr sr_icmp_t3_hdr_t;
 
-
+/* Structure of a type 11 ICMP header
+ */
+struct sr_icmp_t11_hdr {
+  uint8_t icmp_type;
+  uint8_t icmp_code;
+  uint16_t icmp_sum;
+  uint32_t unused;
+  uint32_t data[ICMP_DATA_SIZE/4];
+} __attribute__ ((packed)) ;
+typedef struct sr_icmp_t11_hdr sr_icmp_t11_hdr_t;
 
 
 /*
@@ -116,8 +135,8 @@ struct sr_ip_hdr
     unsigned int ip_v:4;		/* version */
     unsigned int ip_hl:4;		/* header length */
 #else
-#error "Byte ordering ot specified " 
-#endif 
+#error "Byte ordering ot specified "
+#endif
     uint8_t ip_tos;			/* type of service */
     uint16_t ip_len;			/* total length */
     uint16_t ip_id;			/* identification */
@@ -133,7 +152,7 @@ struct sr_ip_hdr
   } __attribute__ ((packed)) ;
 typedef struct sr_ip_hdr sr_ip_hdr_t;
 
-/* 
+/*
  *  Ethernet packet header prototype.  Too many O/S's define this differently.
  *  Easy enough to solve that and define it here.
  */
